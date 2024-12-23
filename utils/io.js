@@ -14,6 +14,11 @@ module.exports = function (io) {
             // 유저정보를 저장
             try{
                 const user = await userController.saveUser(userName, socket.id);
+                const welcomeMessage = {
+                    chat: `${user.name} is joined to this room`,
+                    user: {id : null, name: "system"},  // 백엔드에서 주는 메세지라서 id는 null
+                };
+                io.emit("message", welcomeMessage);
                 cb({ok:true, data:user})
             }catch(error){
                 cb({ok:false, error:error.message});
