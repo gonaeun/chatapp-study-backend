@@ -1,5 +1,6 @@
 const chatController = require("../Controllers/chat.controller");
-const userController = require("../Controllers/user.controller")
+const userController = require("../Controllers/user.controller");
+const roomController = require("../Controllers/room.controller");
 
 module.exports = function (io) {
     // io 관련된 모든 업무
@@ -7,7 +8,9 @@ module.exports = function (io) {
         // 듣는 함수 on
         // 연결된 사람의 정보를 매개변수 socket에 담아둠
         console.log("client is connected, socket ID:", socket.id);
-        
+
+        // 룸 리스트 보내기
+        socket.emit("rooms", await roomController.getAllRooms());
 
         socket.on("login",async(userName,cb)=>{
                 console.log("backend", userName);
