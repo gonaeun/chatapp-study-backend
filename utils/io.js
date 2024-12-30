@@ -12,22 +12,44 @@ module.exports = function (io) {
         // 룸 리스트 보내기
         socket.emit("rooms", await roomController.getAllRooms());
 
+        // 로그인
         socket.on("login",async(userName,cb)=>{
                 console.log("backend", userName);
             // 유저정보를 저장
             try{
                 const user = await userController.saveUser(userName, socket.id);
-                const welcomeMessage = {
-                    chat: `${user.name} is joined to this room`,
-                    user: {id : null, name: "system"},  // 백엔드에서 주는 메세지라서 id는 null
-                };
-                io.emit("message", welcomeMessage);
+                // 채팅방에 들어가야 웰컴메세지 보여줄것이기 때문에, 밑의 코드는 주석처리리
+                // const welcomeMessage = {
+                //     chat: `${user.name} is joined to this room`,
+                //     user: {id : null, name: "system"},  // 백엔드에서 주는 메세지라서 id는 null
+                // };
+                // io.emit("message", welcomeMessage);
                 cb({ok:true, data:user})
             }catch(error){
                 cb({ok:false, error:error.message});
             }
         });
 
+        // 방 참여
+        socket.on("joinRoom", async (roomId, cb) => {
+            try{
+                const user = await userController.checkUser(socket.id); // 1. 일단 유저정보 들고오기
+                await roomController.joinRoom(roomId, user); // 2. room데이터의 member필드에 해당 유저 추가하고, user데이터의 room필드에 유저가 조인한 room정보 업데이트
+                socket.join(roomId); // 3. socket은 해당room id로 된 채널에 join
+                const welcomeMessage = {
+                    chat: `${user.name} is joined to this room`,
+                    user: { id: null, name: "system" },
+                };
+                console.log("Sending welcome message to room:", roomId, welcomeMessage); // 디버깅 로그 추가
+                io.to(roomId).emit("message", welcomeMessage); // 4. 방에 메세지 전송송
+                io.emit("rooms", await roomController.getAllRooms()); // 5. 모든 방 업데이트
+                cb({ok: true});
+            } catch (error) {
+                cb({ok: false, error:error.message});
+            }
+        });
+
+        // 메세지 전송
         socket.on("sendMessage",async(message,cb)=>{
             try{
                 // socket id로 유저 찾기
