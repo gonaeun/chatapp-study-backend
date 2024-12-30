@@ -20,4 +20,14 @@ roomController.joinRoom = async (roomId, user) =>{
   user.room = roomId; // 유저의 현재 방 정보 업데이트
   await user.save(); // 변경사항 저장
 };
+
+roomController.leaveRoom = async (user) => {
+  const room = await Room.findById(user.room);
+  if (!room) {
+    throw new Error("Room not found");
+  }
+  room.members.remove(user._id);
+  await room.save();
+};
+
 module.exports = roomController;
